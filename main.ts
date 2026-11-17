@@ -165,7 +165,9 @@ const forecastCase = (c: Case): Array<{ hour: number; q: number[] }> => {
   const first = c.known.find((k) => k.hour === 1);
   if (first === undefined) throw new Error(`${c.id} has no hour-1 print`);
   const p1 = Math.max(1, first.viewers);
-  const curves = c.comparables.map(ratioCurve).filter((r) => r !== null);
+  // A case without comparables still forecasts: every hour falls back to
+  // the persistence baseline, so the case stays valid.
+  const curves = (c.comparables ?? []).map(ratioCurve).filter((r) => r !== null);
 
   const hours = c.forecast.map(({ hour }) => {
     const h = hour;
