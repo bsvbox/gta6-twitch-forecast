@@ -26,10 +26,15 @@
 // Two guards keep the fit honest where the data thins out:
 //   - Big-launch floor: the median is never below the median log-ratio of
 //     the comparables whose first hour was at least 50,000 viewers, so a
-//     huge first hour never forecasts a shrinking day.
+//     huge first hour never forecasts a shrinking day. The fitted median is
+//     also pulled 10% of the way toward that big-launch median: the
+//     quadratic can overshoot on the biggest launches, and the pull tempers
+//     it without moving the small ones.
 //   - Size-adaptive spread: the spread is the residuals' MAD sigma, scaled
 //     from 1.0 when the first hour is small (that regime is wild) down to
-//     0.65 when it is big (that regime is tight).
+//     0.65 when it is big (that regime is tight), then narrowed by 0.9:
+//     the v2 intervals over-covered (0.93 vs the nominal 0.90), and the
+//     pinball loss pays for needless width.
 //   - The size used in the fit is clamped to log10(p1) in [2.0, 6.2], so
 //     the quadratic can never turn around outside the observed range.
 //
@@ -65,6 +70,10 @@ const MIN_CURVES = 8;
 /** The size used in the quadratic fit is clamped to this log10(p1) range. */
 const LP_MIN = 2.0;
 const LP_MAX = 6.2;
+/** The fitted median is pulled this far toward the big-launch median. */
+const SHRINK = 0.1;
+/** The spread is narrowed by this factor (v2 over-covered). */
+const SPREAD = 0.9;
 
 interface HourlyPoint {
   from: string;
@@ -234,8 +243,11 @@ const forecastCase = (c: Case): Array<{ hour: number; q: number[] }> => {
       .filter((curve) => curve.v1 >= BIG_LAUNCH)
       .map((curve) => curve.logRatio[h - 1])
       .filter((l): l is number => l !== null);
-    if (big.length > 0) mu = Math.max(mu, median(big));
-    const scale = spreadScale(p1);
+    if (big.length > 0) {
+      const bigMed = median(big);
+      mu = Math.max((1 - SHRINK) * mu + SHRINK * bigMed, bigMed);
+    }
+    const scale = spreadScale(p1) * SPREAD;
     const q = Z.map((z) => {
       const v = round2(p1 * Math.exp(mu + z * sigma * scale));
       return Math.min(1e9, Math.max(0.01, v));

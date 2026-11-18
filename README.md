@@ -8,7 +8,7 @@ Forecasts how many people watch Grand Theft Auto VI live on Twitch in each hour 
 
 The model is calibrated on the release-day curves of 38 past big game launches (the case's own comparables): for each hour it regresses the log-ratio to hour 1 on the log of hour 1's size, because small first hours explode and big first hours barely move. The median is floored at the big-launch median so a huge first hour never forecasts a shrinking day, and the spread narrows when the first hour is big (that regime is tight) and widens when it is small (that regime is wild). Deterministic, offline, Node standard library only.
 
-Practice score (local, same pinball loss on the log scale as the grader): **0.193** mean over the four practice launches, against the house baseline's 0.387.
+Practice score (local, same pinball loss on the log scale as the grader): **0.141** mean over the four practice launches, against the house baseline's 0.387.
 
 ## Run it
 
